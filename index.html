@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#12100D">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Esercizi">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <title>Editor Esercizi</title>
 <script>
 /** @license
@@ -460,6 +464,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   .color-row{display:flex; gap:10px; align-items:center; padding:10px 14px; flex-shrink:0; border-bottom:1px solid var(--line);}
   .color-row .swatch{width:28px; height:28px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
   .color-row .swatch.active{border-color:var(--text);}
+  .color-row .digit-btn{width:30px; height:30px; padding:0; flex-shrink:0; font-size:13px; font-weight:800;}
+  .color-row .digit-btn.active-digit{background:var(--accent); border-color:var(--accent); color:#1A1208;}
 
   .canvas-wrap{padding:12px 14px 4px; flex-shrink:0;}
   #field-frame{position:relative; width:100%; max-width:calc(58vh * 2 / 3); aspect-ratio:2/3; margin:0 auto; touch-action:none;}
@@ -478,6 +484,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   .field textarea{resize:vertical; min-height:60px;}
   .row2{display:flex; gap:10px;}
   .row2 .field{flex:1;}
+
+  #app-toast{position:fixed; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px); background:var(--accent-2); color:#10190F; font-weight:700; font-size:14px; padding:10px 20px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:999;}
+  #app-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
@@ -573,7 +582,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   "use strict";
 
   const STORAGE_KEY = 'editorEsercizi.esercizi.v1';
-  const SEED_FLAG_KEY = 'editorEsercizi.seeded.v3';
+  const SEED_FLAG_KEY = 'editorEsercizi.seeded.v4';
   const CATEGORIES = ['Tecnica individuale','Possesso palla','Finalizzazione','Atletico','Portieri','Tattica'];
   const PALETTE = ['#F3EFE6','#C97A3D','#7FA870','#5B8FC9','#B55A48'];
   const PITCH_W = 400, PITCH_H = 600;
@@ -627,9 +636,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       render:() => `<circle r="4" fill="#E0B23D"/><circle r="9" fill="none" stroke="#E0B23D" stroke-width="2"/>` },
     bandierina: { label:'Bandiera', colorable:false,
       icon:'<line x1="6" y1="4" x2="6" y2="23" stroke="#F3EFE6" stroke-width="2"/><polygon points="6,4 20,8 6,12" fill="#B55A48"/>',
-      render:() => `<line x1="-9" y1="-13" x2="-9" y2="13" stroke="#F3EFE6" stroke-width="2.4"/><polygon points="-9,-13 11,-7 -9,-1" fill="#B55A48"/>` }
+      render:() => `<line x1="-9" y1="-13" x2="-9" y2="13" stroke="#F3EFE6" stroke-width="2.4"/><polygon points="-9,-13 11,-7 -9,-1" fill="#B55A48"/>` },
+    materassino: { label:'Materassino', colorable:true,
+      icon:'<rect x="4" y="8" width="18" height="10" rx="2" fill="#7FA870"/>',
+      render:(c) => `<rect x="-16" y="-9" width="32" height="18" rx="3" fill="${c}" stroke="#12100D" stroke-width="0.8"/>` },
+    torretta: { label:'Torretta coni', colorable:false,
+      icon:'<polygon points="13,3 20,23 6,23" fill="#C97A3D"/><polygon points="13,9 18,23 8,23" fill="#8a5225"/>',
+      render:() => `<polygon points="0,-16 13,16 -13,16" fill="#C97A3D" stroke="#12100D" stroke-width="1"/><polygon points="0,-8 8,16 -8,16" fill="#8a5225" opacity="0.65"/>` },
+    numero: { label:'Numero', colorable:true,
+      icon:'<circle cx="13" cy="13" r="10" fill="#5B8FC9"/><text x="13" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" font-family="sans-serif">1</text>',
+      render:(c) => `<circle r="14" fill="${c}" stroke="#12100D" stroke-width="0.8"/>` },
+    quadrato: { label:'Quadrato', colorable:true,
+      icon:'<rect x="5" y="5" width="16" height="16" fill="none" stroke="#5B8FC9" stroke-width="2.5"/>',
+      render:(c) => `<rect x="-16" y="-16" width="32" height="32" fill="${c}" fill-opacity="0.22" stroke="${c}" stroke-width="2.4"/>` },
+    rettangolo: { label:'Rettangolo', colorable:true,
+      icon:'<rect x="3" y="8" width="20" height="10" fill="none" stroke="#5B8FC9" stroke-width="2.5"/>',
+      render:(c) => `<rect x="-20" y="-12" width="40" height="24" fill="${c}" fill-opacity="0.22" stroke="${c}" stroke-width="2.4"/>` },
+    rombo: { label:'Rombo', colorable:true,
+      icon:'<polygon points="13,3 23,13 13,23 3,13" fill="none" stroke="#5B8FC9" stroke-width="2.5"/>',
+      render:(c) => `<polygon points="0,-18 18,0 0,18 -18,0" fill="${c}" fill-opacity="0.22" stroke="${c}" stroke-width="2.4"/>` },
+    cerchio_zona: { label:'Zona cerchio', colorable:true,
+      icon:'<circle cx="13" cy="13" r="9" fill="#5B8FC9" fill-opacity="0.3" stroke="#5B8FC9" stroke-width="2"/>',
+      render:(c) => `<circle r="18" fill="${c}" fill-opacity="0.22" stroke="${c}" stroke-width="2.4"/>` }
   };
-  const SYMBOL_DEFAULT_COLOR = { manichino:'#7FA870', casacca:'#5B8FC9', cono:'#C97A3D', cerchio:'#5B8FC9', cinesino:'#B55A48' };
+  const SYMBOL_DEFAULT_COLOR = { manichino:'#7FA870', casacca:'#5B8FC9', cono:'#C97A3D', cerchio:'#5B8FC9', cinesino:'#B55A48', materassino:'#7FA870', numero:'#C97A3D', quadrato:'#5B8FC9', rettangolo:'#5B8FC9', rombo:'#5B8FC9', cerchio_zona:'#5B8FC9' };
 
   // ---- State
   let exercises = loadExercises();
@@ -641,6 +671,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   let currentStroke = null;
   let drawingPathEl = null;
   let activeColor = PALETTE[0];
+  let activeDigit = '1';
   let activeDashed = false;
   let activeFilter = 'Tutti';
   let idCounter = 1;
@@ -655,9 +686,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   function newId(prefix){ return prefix + '_' + Date.now() + '_' + (idCounter++); }
 
   // ---- Seed library
-  function sym(type,x,y,rotation,color){
+  function sym(type,x,y,rotation,color,label){
     const s = { id:newId('sym'), type, x, y, rotation:rotation||0, scale:1 };
     if (color) s.color = color;
+    if (label) s.label = label;
     return s;
   }
   function stroke(points,color,dashed){
@@ -750,7 +782,39 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       { title:'Torello con doppio jolly', category:'Tecnica individuale', duration:'15',
         description:"Torello a quattro esterni con due giocatori jolly centrali che aiutano sempre la squadra in possesso.",
         notes:"I jolly possono muoversi liberamente all'interno del quadrato per creare superiorità numerica.",
-        field:{ symbols:[ sym('cono',110,220), sym('cono',290,220), sym('cono',110,380), sym('cono',290,380), sym('manichino',200,140,0,'#7FA870'), sym('manichino',200,460,0,'#7FA870'), sym('pallone',200,300) ], strokes:[] } }
+        field:{ symbols:[ sym('cono',110,220), sym('cono',290,220), sym('cono',110,380), sym('cono',290,380), sym('manichino',200,140,0,'#7FA870'), sym('manichino',200,460,0,'#7FA870'), sym('pallone',200,300) ], strokes:[] } },
+      { title:'Riflessi ravvicinati', category:'Portieri', duration:'8',
+        description:"Il portiere para due palloni consecutivi calciati ravvicinati da distanza corta, per allenare i riflessi.",
+        notes:"Aumentare la velocità di esecuzione dei tiri mano a mano che il portiere migliora la risposta.",
+        field:{ symbols:[ sym('porta_g',200,560), sym('manichino',200,480,0,'#7FA870'), sym('pallone',170,430), sym('pallone',230,430) ], strokes:[] } },
+      { title:'Gioco con i piedi sotto pressione', category:'Portieri', duration:'10',
+        description:"Il portiere riceve un retropassaggio e deve giocare con i piedi mentre un attaccante lo pressa da vicino.",
+        notes:"Alternare il primo controllo verso destra e sinistra per abituarsi a entrambi i lati.",
+        field:{ symbols:[ sym('porta_g',200,560), sym('manichino',200,480,0,'#7FA870'), sym('materassino',200,500,90,'#7FA870'), sym('manichino',200,400,0,'#B55A48'), sym('pallone',200,440) ], strokes:[] } },
+      { title:'Ampiezza e profondità a zone', category:'Tattica', duration:'18',
+        description:"La squadra in possesso cerca di occupare le zone laterali larghe e la zona centrale in profondità, segnalate dai quadrati colorati.",
+        notes:"Solo un giocatore per zona alla volta, per mantenere ampiezza e profondità reali.",
+        field:{ symbols:[ sym('quadrato',100,250,0,'#5B8FC9'), sym('quadrato',300,250,0,'#5B8FC9'), sym('quadrato',200,450,0,'#C97A3D'), sym('pallone',200,300) ], strokes:[] } },
+      { title:'Possesso a squadre con numeri', category:'Possesso palla', duration:'15',
+        description:"Possesso a due coppie numerate: l'allenatore chiama un numero e quel giocatore deve toccare subito il pallone.",
+        notes:"Ottimo per allenare attenzione e reattività oltre alla tecnica di base.",
+        field:{ symbols:[ sym('numero',150,250,0,'#5B8FC9','1'), sym('numero',250,250,0,'#5B8FC9','2'), sym('numero',150,350,0,'#B55A48','3'), sym('numero',250,350,0,'#B55A48','4'), sym('pallone',200,300) ], strokes:[] } },
+      { title:'Slalom con torretta finale e conclusione', category:'Tecnica individuale', duration:'12',
+        description:"Conduzione a slalom tra i coni, superamento della torretta di coni con un tocco orientato e conclusione in porta.",
+        notes:"Curare l'ultimo tocco prima del tiro: deve allontanare la palla dal difensore immaginario rappresentato dalla torretta.",
+        field:{ symbols:[ sym('cono',150,450), sym('cono',250,400), sym('cono',150,350), sym('cono',250,300), sym('torretta',200,220), sym('porta_g',200,40), sym('pallone',150,500) ], strokes:[] } },
+      { title:'Circuito con materassini e cerchi', category:'Atletico', duration:'10',
+        description:"Circuito misto: saltelli sui materassini seguiti da appoggi rapidi nei cerchi.",
+        notes:"Variante: saltelli a piedi uniti sui materassini, appoggi alternati nei cerchi.",
+        field:{ symbols:[ sym('materassino',150,200,90), sym('materassino',250,200,90), sym('cerchio',150,300), sym('cerchio',250,300), sym('cerchio',200,380) ], strokes:[] } },
+      { title:'Conclusione da zona rombo', category:'Finalizzazione', duration:'12',
+        description:"Il giocatore riceve palla all'interno della zona rombo e deve concludere entro due tocchi verso la porta.",
+        notes:"Variante: aumentare a tre tocchi se il gruppo è alle prime armi con la finalizzazione rapida.",
+        field:{ symbols:[ sym('rombo',200,250,0,'#B55A48'), sym('porta_g',200,40), sym('pallone',200,250), sym('cono',150,350), sym('cono',250,350) ], strokes:[] } },
+      { title:'Costruzione dal basso a zone', category:'Tattica', duration:'20',
+        description:"Il portiere e i difensori costruiscono l'azione dal basso spostando la palla tra le zone segnalate, contro il primo pressing avversario.",
+        notes:"I difensori centrali devono allargarsi correttamente nelle zone quadrate prima di ricevere palla.",
+        field:{ symbols:[ sym('rettangolo',200,500,0,'#5B8FC9'), sym('quadrato',120,380,0,'#5B8FC9'), sym('quadrato',280,380,0,'#5B8FC9'), sym('manichino',200,480,0,'#7FA870'), sym('manichino',120,420,0,'#5B8FC9'), sym('manichino',280,420,0,'#5B8FC9'), sym('pallone',200,480) ], strokes:[] } }
     ];
     const existingTitles = new Set(exercises.map(e => e.title));
     let added = 0;
@@ -906,6 +970,38 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         doc.setDrawColor(224,178,61); doc.setLineWidth(1.3*u);
         doc.circle(cx, cy, 9*u, 'S');
         break;
+      case 'materassino':
+        doc.setFillColor(r,g,b);
+        doc.roundedRect ? doc.roundedRect(cx-16*u, cy-9*u, 32*u, 18*u, 2*u, 2*u, 'F') : doc.rect(cx-16*u, cy-9*u, 32*u, 18*u, 'F');
+        break;
+      case 'torretta':
+        doc.setFillColor(201,122,61);
+        doc.triangle(cx, cy-16*u, cx+13*u, cy+16*u, cx-13*u, cy+16*u, 'F');
+        break;
+      case 'numero':
+        doc.setFillColor(r,g,b);
+        doc.circle(cx, cy, 14*u, 'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(11*u*2.2); doc.setTextColor(255,255,255);
+        doc.text(String(s.label||'1'), cx, cy, {align:'center', baseline:'middle'});
+        doc.setTextColor(20,20,20);
+        break;
+      case 'quadrato':
+        doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
+        doc.rect(cx-16*u, cy-16*u, 32*u, 32*u, 'S');
+        break;
+      case 'rettangolo':
+        doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
+        doc.rect(cx-20*u, cy-12*u, 40*u, 24*u, 'S');
+        break;
+      case 'rombo':
+        doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
+        doc.triangle(cx, cy-18*u, cx+18*u, cy, cx, cy+18*u, 'S');
+        doc.triangle(cx, cy+18*u, cx-18*u, cy, cx, cy-18*u, 'S');
+        break;
+      case 'cerchio_zona':
+        doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
+        doc.circle(cx, cy, 18*u, 'S');
+        break;
     }
   }
   function drawFieldPDF(doc, field, x0, y0, w, h){
@@ -967,10 +1063,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       }
       const filename = (ex.title || 'esercizio').toLowerCase().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'') || 'esercizio';
       doc.save(filename + '.pdf');
+      showToast('✓ PDF esportato');
     } catch(err){
       console.error(err);
       alert('Non sono riuscito a generare il PDF: ' + (err && err.message ? err.message : err));
     }
+  }
+  function showToast(msg){
+    let t = document.getElementById('app-toast');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'app-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.className = 'show';
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => { t.className = ''; }, 2200);
   }
 
   document.getElementById('fab-new').addEventListener('click', () => { openEditor(null); showView('editor'); });
@@ -1037,7 +1146,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   function symbolMarkup(s){
     const def = SYMBOLS[s.type]; if (!def) return '';
     const color = s.color || SYMBOL_DEFAULT_COLOR[s.type] || '';
-    return `<g class="symbol" data-id="${s.id}" transform="translate(${s.x},${s.y}) rotate(${s.rotation||0}) scale(${s.scale||1})"><circle r="${HIT_R}" fill="transparent"/>${def.render(color)}</g>`;
+    const numTxt = s.type==='numero' ? `<text x="0" y="1" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="800" fill="#fff" font-family="sans-serif">${s.label||'1'}</text>` : '';
+    return `<g class="symbol" data-id="${s.id}" transform="translate(${s.x},${s.y}) rotate(${s.rotation||0}) scale(${s.scale||1})"><circle r="${HIT_R}" fill="transparent"/>${def.render(color)}${numTxt}</g>`;
   }
   function strokeMarkup(s){
     if (!s.points || s.points.length<2) return '';
@@ -1045,23 +1155,36 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     return `<path d="${d}" stroke="${s.color}" stroke-width="${s.width||3}" fill="none" stroke-linecap="round" stroke-linejoin="round" ${s.dashed?'stroke-dasharray="8,6"':''}/>`;
   }
 
-  // ---- Color row
+  // ---- Color row (e selettore cifre per i numeri)
   const colorRowEl = document.getElementById('color-row');
-  function renderColorRow(){
-    let show = false;
-    if (mode === 'draw') show = true;
-    else if (mode.startsWith('place:')){
-      const t = mode.split(':')[1];
-      if (SYMBOLS[t] && SYMBOLS[t].colorable) show = true;
-    } else if (mode === 'select' && selectedId){
+  function currentTypeInContext(){
+    if (mode.startsWith('place:')) return mode.split(':')[1];
+    if (mode === 'select' && selectedId){
       const s = editing && editing.field.symbols.find(sy => sy.id===selectedId);
-      if (s && SYMBOLS[s.type] && SYMBOLS[s.type].colorable) show = true;
+      return s ? s.type : null;
     }
-    if (!show){ colorRowEl.style.display='none'; colorRowEl.innerHTML=''; return; }
+    return null;
+  }
+  function renderColorRow(){
+    const type = currentTypeInContext();
+    const showColor = mode==='draw' || (type && SYMBOLS[type] && SYMBOLS[type].colorable);
+    const showDigits = type === 'numero';
+    if (!showColor && !showDigits){ colorRowEl.style.display='none'; colorRowEl.innerHTML=''; return; }
     colorRowEl.style.display='flex';
-    colorRowEl.innerHTML = PALETTE.map(c =>
-      `<button class="swatch ${c===activeColor?'active':''}" data-color="${c}" style="background:${c};"></button>`
-    ).join('') + (mode==='draw' ? `<button class="icon-btn" id="toggle-dash">${activeDashed ? '┄ Tratteggiata' : '━ Continua'}</button>` : '');
+    let html = '';
+    if (showColor){
+      html += PALETTE.map(c =>
+        `<button class="swatch ${c===activeColor?'active':''}" data-color="${c}" style="background:${c};"></button>`
+      ).join('');
+      if (mode==='draw') html += `<button class="icon-btn" id="toggle-dash">${activeDashed ? '┄ Tratteggiata' : '━ Continua'}</button>`;
+    }
+    if (showDigits){
+      const curDigit = (mode==='select' && selectedId) ? (editing.field.symbols.find(sy=>sy.id===selectedId)||{}).label || '1' : activeDigit;
+      html += '1234567890'.slice(0,9).split('').map(d =>
+        `<button class="icon-btn digit-btn ${d===curDigit?'active-digit':''}" data-digit="${d}">${d}</button>`
+      ).join('');
+    }
+    colorRowEl.innerHTML = html;
     colorRowEl.querySelectorAll('.swatch').forEach(sw => sw.addEventListener('click', () => {
       const color = sw.dataset.color;
       activeColor = color;
@@ -1070,13 +1193,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         if (s){
           s.color = color;
           const el = symbolsOverlayEl.querySelector('.field-symbol[data-id="'+selectedId+'"]');
-          if (el) el.innerHTML = iconSVG(s.type, color);
+          if (el) el.innerHTML = iconSVG(s);
         }
       }
       renderColorRow();
     }));
     const dashBtn = document.getElementById('toggle-dash');
     if (dashBtn) dashBtn.addEventListener('click', () => { activeDashed = !activeDashed; renderColorRow(); });
+    colorRowEl.querySelectorAll('.digit-btn').forEach(db => db.addEventListener('click', () => {
+      const digit = db.dataset.digit;
+      activeDigit = digit;
+      if (mode === 'select' && selectedId){
+        const s = editing.field.symbols.find(sy => sy.id===selectedId);
+        if (s && s.type==='numero'){
+          s.label = digit;
+          const el = symbolsOverlayEl.querySelector('.field-symbol[data-id="'+selectedId+'"]');
+          if (el) el.innerHTML = iconSVG(s);
+        }
+      }
+      renderColorRow();
+    }));
   }
 
   // ---- Symbol toolbar
@@ -1117,8 +1253,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     (editing.field.symbols||[]).forEach(s => symbolsOverlayEl.appendChild(makeSymbolEl(s)));
   }
 
-  function iconSVG(type, color){
-    return `<svg viewBox="-25 -25 50 50">${SYMBOLS[type].render(color)}</svg>`;
+  function iconSVG(s){
+    const color = s.color || SYMBOL_DEFAULT_COLOR[s.type] || '#F3EFE6';
+    let inner = SYMBOLS[s.type].render(color);
+    if (s.type === 'numero'){
+      inner += `<text x="0" y="1" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="800" fill="#fff" font-family="-apple-system,sans-serif">${s.label||'1'}</text>`;
+    }
+    return `<svg viewBox="-25 -25 50 50">${inner}</svg>`;
   }
   function positionSymbolEl(el, s){
     el.style.left = (s.x/PITCH_W*100) + '%';
@@ -1129,8 +1270,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     const el = document.createElement('div');
     el.className = 'field-symbol';
     el.dataset.id = s.id;
-    const color = s.color || SYMBOL_DEFAULT_COLOR[s.type] || '#F3EFE6';
-    el.innerHTML = iconSVG(s.type, color);
+    el.innerHTML = iconSVG(s);
     positionSymbolEl(el, s);
     attachSymbolHandler(el);
     return el;
@@ -1196,6 +1336,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       const type = mode.split(':')[1];
       const s = { id:newId('sym'), type, x:p.x, y:p.y, rotation:0, scale:1 };
       if (SYMBOLS[type].colorable) s.color = activeColor;
+      if (type === 'numero') s.label = activeDigit;
       editing.field.symbols.push(s);
       symbolsOverlayEl.appendChild(makeSymbolEl(s));
     } else if (mode === 'draw'){
@@ -1341,6 +1482,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   renderFilters();
   renderSymbolToolbar();
   renderLibrary();
+  if ('serviceWorker' in navigator && location.protocol === 'https:'){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
 
 })();
 </script>
