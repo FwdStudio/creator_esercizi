@@ -461,20 +461,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   .sym-btn.active{border-color:var(--accent); color:var(--accent);}
   .sym-btn.tool.active{border-color:var(--accent-2); color:var(--accent-2);}
 
-  .color-row{display:flex; gap:10px; align-items:center; padding:10px 14px; flex-shrink:0; border-bottom:1px solid var(--line);}
+  .color-row{display:flex; gap:10px; align-items:center; padding:10px 14px; flex-shrink:0; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  .color-row::-webkit-scrollbar{display:none;}
   .color-row .swatch{width:28px; height:28px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex-shrink:0;}
   .color-row .swatch.active{border-color:var(--text);}
   .color-row .digit-btn{width:30px; height:30px; padding:0; flex-shrink:0; font-size:13px; font-weight:800;}
   .color-row .digit-btn.active-digit{background:var(--accent); border-color:var(--accent); color:#1A1208;}
 
-  .canvas-wrap{padding:12px 14px 4px; flex-shrink:0;}
-  #field-frame{position:relative; width:100%; max-width:calc(58vh * 2 / 3); aspect-ratio:2/3; margin:0 auto; touch-action:none;}
+  .canvas-wrap{padding:12px 14px 4px; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  #field-frame{position:relative; touch-action:none;}
   #pitch{position:absolute; inset:0; width:100%; height:100%; background:var(--pitch); border-radius:10px; border:1px solid var(--line); display:block;}
   .pitch-lines{stroke:var(--pitch-line); stroke-width:1.5; fill:none;}
   #symbols-overlay{position:absolute; inset:0; pointer-events:none;}
   .field-symbol{position:absolute; width:11%; aspect-ratio:1; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .field-symbol svg{width:100%; height:100%; overflow:visible; display:block; pointer-events:none;}
   .field-symbol.selected::after{content:''; position:absolute; inset:-22%; border:1.5px dashed var(--accent); border-radius:50%; pointer-events:none;}
+  .resize-handle{position:absolute; right:-10px; bottom:-10px; width:22px; height:22px; background:var(--accent); border:2px solid #fff; border-radius:50%; touch-action:none; display:none; box-shadow:0 2px 6px rgba(0,0,0,.4);}
+  .field-symbol.selected .resize-handle{display:block;}
   #action-row{display:flex; gap:8px; padding:10px 14px; flex-wrap:wrap; flex-shrink:0;}
   #action-row button{flex:1; min-width:70px;}
 
@@ -847,6 +850,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     document.querySelectorAll('.subview').forEach(v => v.classList.remove('active'));
     document.getElementById('sub-' + name).classList.add('active');
     subtabBtns.forEach(b => b.classList.toggle('active', b.dataset.sub === name));
+    if (name === 'disegno') requestAnimationFrame(sizeFieldFrame);
   }
 
   // ---- Library rendering
@@ -985,23 +989,31 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         doc.text(String(s.label||'1'), cx, cy, {align:'center', baseline:'middle'});
         doc.setTextColor(20,20,20);
         break;
-      case 'quadrato':
+      case 'quadrato': {
+        const sc = (s.scale||1)*16*u;
         doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
-        doc.rect(cx-16*u, cy-16*u, 32*u, 32*u, 'S');
+        doc.rect(cx-sc, cy-sc, sc*2, sc*2, 'S');
         break;
-      case 'rettangolo':
+      }
+      case 'rettangolo': {
+        const sc = s.scale||1;
         doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
-        doc.rect(cx-20*u, cy-12*u, 40*u, 24*u, 'S');
+        doc.rect(cx-20*u*sc, cy-12*u*sc, 40*u*sc, 24*u*sc, 'S');
         break;
-      case 'rombo':
+      }
+      case 'rombo': {
+        const sc = (s.scale||1)*18*u;
         doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
-        doc.triangle(cx, cy-18*u, cx+18*u, cy, cx, cy+18*u, 'S');
-        doc.triangle(cx, cy+18*u, cx-18*u, cy, cx, cy-18*u, 'S');
+        doc.triangle(cx, cy-sc, cx+sc, cy, cx, cy+sc, 'S');
+        doc.triangle(cx, cy+sc, cx-sc, cy, cx, cy-sc, 'S');
         break;
-      case 'cerchio_zona':
+      }
+      case 'cerchio_zona': {
+        const sc = (s.scale||1)*18*u;
         doc.setDrawColor(r,g,b); doc.setLineWidth(1.8*u);
-        doc.circle(cx, cy, 18*u, 'S');
+        doc.circle(cx, cy, sc, 'S');
         break;
+      }
     }
   }
   function drawFieldPDF(doc, field, x0, y0, w, h){
@@ -1169,8 +1181,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     const type = currentTypeInContext();
     const showColor = mode==='draw' || (type && SYMBOLS[type] && SYMBOLS[type].colorable);
     const showDigits = type === 'numero';
-    if (!showColor && !showDigits){ colorRowEl.style.display='none'; colorRowEl.innerHTML=''; return; }
+    if (!showColor && !showDigits){
+      colorRowEl.style.display='none'; colorRowEl.innerHTML='';
+      requestAnimationFrame(sizeFieldFrame);
+      return;
+    }
     colorRowEl.style.display='flex';
+    requestAnimationFrame(sizeFieldFrame);
     let html = '';
     if (showColor){
       html += PALETTE.map(c =>
@@ -1193,7 +1210,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         if (s){
           s.color = color;
           const el = symbolsOverlayEl.querySelector('.field-symbol[data-id="'+selectedId+'"]');
-          if (el) el.innerHTML = iconSVG(s);
+          if (el){
+            el.innerHTML = iconSVG(s);
+            if (RESIZABLE_TYPES.includes(s.type)){
+              const handle = document.createElement('div');
+              handle.className = 'resize-handle';
+              el.appendChild(handle);
+              attachResizeHandle(handle, el, s);
+            }
+          }
         }
       }
       renderColorRow();
@@ -1246,6 +1271,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   const actionRowEl = document.getElementById('action-row');
   let dragOffX = 0, dragOffY = 0;
 
+  const canvasWrapEl = document.querySelector('.canvas-wrap');
+  function sizeFieldFrame(){
+    if (!canvasWrapEl) return;
+    const availW = canvasWrapEl.clientWidth;
+    const availH = canvasWrapEl.clientHeight;
+    if (availW <= 0 || availH <= 0) return;
+    let w = availW, h = w * (PITCH_H/PITCH_W);
+    if (h > availH){ h = availH; w = h * (PITCH_W/PITCH_H); }
+    fieldFrameEl.style.width = Math.floor(w) + 'px';
+    fieldFrameEl.style.height = Math.floor(h) + 'px';
+  }
+  window.addEventListener('resize', () => {
+    if (document.getElementById('view-editor').classList.contains('active')) sizeFieldFrame();
+  });
+
   function buildField(){
     const strokesHtml = (editing.field.strokes||[]).map(s => strokeMarkup(s)).join('');
     pitchEl.innerHTML = pitchLinesMarkup() + `<g id="strokes-layer">${strokesHtml}</g>`;
@@ -1261,10 +1301,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     }
     return `<svg viewBox="-25 -25 50 50">${inner}</svg>`;
   }
+  const RESIZABLE_TYPES = ['quadrato','rettangolo','rombo','cerchio_zona'];
   function positionSymbolEl(el, s){
     el.style.left = (s.x/PITCH_W*100) + '%';
     el.style.top = (s.y/PITCH_H*100) + '%';
-    el.style.transform = `translate(-50%,-50%) rotate(${s.rotation||0}deg)`;
+    el.style.transform = `translate(-50%,-50%) rotate(${s.rotation||0}deg) scale(${s.scale||1})`;
   }
   function makeSymbolEl(s){
     const el = document.createElement('div');
@@ -1273,7 +1314,40 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     el.innerHTML = iconSVG(s);
     positionSymbolEl(el, s);
     attachSymbolHandler(el);
+    if (RESIZABLE_TYPES.includes(s.type)){
+      const handle = document.createElement('div');
+      handle.className = 'resize-handle';
+      el.appendChild(handle);
+      attachResizeHandle(handle, el, s);
+    }
     return el;
+  }
+  function attachResizeHandle(handleEl, symbolEl, s){
+    handleEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      try { handleEl.setPointerCapture(e.pointerId); } catch(err){}
+      const rect = fieldFrameEl.getBoundingClientRect();
+      const centerX = rect.left + (s.x/PITCH_W)*rect.width;
+      const centerY = rect.top + (s.y/PITCH_H)*rect.height;
+      const startDist = Math.max(1, Math.hypot(e.clientX-centerX, e.clientY-centerY));
+      const startScale = s.scale || 1;
+      if (disegnoSubviewEl) disegnoSubviewEl.style.overflow = 'hidden';
+      function onMove(ev){
+        ev.preventDefault();
+        const dist = Math.hypot(ev.clientX-centerX, ev.clientY-centerY);
+        s.scale = Math.max(0.4, Math.min(3, startScale * (dist/startDist)));
+        positionSymbolEl(symbolEl, s);
+      }
+      function onEnd(){
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onEnd);
+        document.removeEventListener('pointercancel', onEnd);
+        if (disegnoSubviewEl) disegnoSubviewEl.style.overflow = '';
+      }
+      document.addEventListener('pointermove', onMove, {passive:false});
+      document.addEventListener('pointerup', onEnd);
+      document.addEventListener('pointercancel', onEnd);
+    });
   }
 
   function attachSymbolHandler(el){
@@ -1447,6 +1521,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     renderActionRow();
     renderColorRow();
     showView('editor');
+    requestAnimationFrame(sizeFieldFrame);
   }
 
   document.getElementById('btn-cancel').addEventListener('click', () => {
