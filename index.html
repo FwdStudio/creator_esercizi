@@ -398,7 +398,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     --accent:#C97A3D;
     --accent-2:#4F8256;
     --text:#2A2620;
-    --text-muted:#8C8272;
+    --text-muted:#6B6255;
     --danger:#B5493A;
     --radius:14px;
     --font-display:'Oswald',system-ui,sans-serif;
@@ -518,7 +518,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   <main>
     <!-- LIBRARY -->
     <section id="view-library" class="view active">
-      <div class="demo-banner" id="demoBanner" onclick="openModal('modalLicenza')" style="display:none">
+      <div class="demo-banner" id="demoBanner" style="display:none">
         <span>🔓</span>
         <span>Stai usando la versione demo: 2 esempi precaricati + 2 esercizi tuoi. Tocca per sbloccare tutto.</span>
       </div>
@@ -595,7 +595,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     </section>
   </main>
 
-  <div class="modal-overlay" id="modalLicenza" onclick="closeModalOutside(event,'modalLicenza')">
+  <div class="modal-overlay" id="modalLicenza">
     <div class="modal">
       <h2>🔑 Licenza Coach Draw</h2>
       <p>Inserisci la chiave di licenza ricevuta via email dopo l'acquisto per sbloccare tutte le funzioni.</p>
@@ -605,8 +605,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       </div>
       <div class="license-status" id="licenseStatus"></div>
       <div style="display:flex; gap:8px; margin-top:16px;">
-        <button class="icon-btn" style="flex:1;" onclick="closeModal('modalLicenza')">Annulla</button>
-        <button class="icon-btn save" style="flex:2;" onclick="attivaLicenza()">Attiva</button>
+        <button class="icon-btn" style="flex:1;" id="btn-licenza-annulla">Annulla</button>
+        <button class="icon-btn save" style="flex:2;" id="btn-licenza-attiva">Attiva</button>
       </div>
       <div style="border-top:1px solid var(--line); margin-top:16px; padding-top:14px; text-align:center;">
         <p style="margin-bottom:10px;">Non hai ancora una licenza?</p>
@@ -705,8 +705,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 
   // ---- State
   // ---- Licenza / Demo
-  const LS_PRODUCT_ID = '1270676';
-  const LS_CHECKOUT_URL = 'https://fwdstudio2025.lemonsqueezy.com/checkout/buy/c386e0ff-cff0-4cbe-8835-a00324a787a1';
+  const LS_PRODUCT_ID = 'INSERISCI_PRODUCT_ID';
+  const LS_CHECKOUT_URL = 'https://INSERISCI-IL-TUO-CHECKOUT-URL';
   const LICENSE_STORAGE_KEY = 'coachDraw.license.v1';
   const DEMO_LIMITS = { maxEsercizi: 2, maxNuovi: 2 };
 
@@ -1705,6 +1705,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   });
 
   // ---- Init
+  const demoBannerEl = document.getElementById('demoBanner');
+  if (demoBannerEl) demoBannerEl.addEventListener('click', () => openModal('modalLicenza'));
+  const modalLicenzaEl = document.getElementById('modalLicenza');
+  if (modalLicenzaEl) modalLicenzaEl.addEventListener('click', (e) => closeModalOutside(e, 'modalLicenza'));
+  const btnLicenzaAnnullaEl = document.getElementById('btn-licenza-annulla');
+  if (btnLicenzaAnnullaEl) btnLicenzaAnnullaEl.addEventListener('click', () => closeModal('modalLicenza'));
+  const btnLicenzaAttivaEl = document.getElementById('btn-licenza-attiva');
+  if (btnLicenzaAttivaEl) btnLicenzaAttivaEl.addEventListener('click', attivaLicenza);
   const linkAcquistaEl = document.getElementById('linkAcquistaLicenza');
   if (linkAcquistaEl) linkAcquistaEl.href = LS_CHECKOUT_URL;
   seedLibrary();
